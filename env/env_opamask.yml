@@ -1,0 +1,31 @@
+name: opamask
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.9
+  - pip
+  - pytorch=1.13.1
+  - torchvision=0.14.1
+  - torchaudio=0.13.1
+  - pytorch-cuda=11.7
+  - ninja
+  - pip:
+    - numpy==1.23.5
+    - opencv-python==4.7.0.72
+    - matplotlib==3.9.2
+    - scipy==1.9.1
+    - pytorch3d==0.7.5
+    - roma==1.5.0
+    - trimesh==4.4.3
+    - omegaconf==2.3.0
+    - transformers==4.28.1
+    - timm==0.6.13
+    - einops==0.6.1
+    - kornia==0.8.1
+    - pytorch-lightning==1.9.3
+    - moviepy==1.0.3
+    - gradio==3.37.0
+    - xformers==0.0.32.post2

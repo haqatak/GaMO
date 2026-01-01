@@ -1,0 +1,50 @@
+[
+  {
+    "name": "rgb_244.png",
+    "H": 384,
+    "W": 512,
+    "mask": "/project2/yichuanh/GaMO/getmask/output/Duster/Replica_6/office_2/rgb_244_mask.png",
+    "type": "binary",
+    "mask_thresh": 0.6
+  },
+  {
+    "name": "rgb_291.png",
+    "H": 384,
+    "W": 512,
+    "mask": "/project2/yichuanh/GaMO/getmask/output/Duster/Replica_6/office_2/rgb_291_mask.png",
+    "type": "binary",
+    "mask_thresh": 0.6
+  },
+  {
+    "name": "rgb_436.png",
+    "H": 384,
+    "W": 512,
+    "mask": "/project2/yichuanh/GaMO/getmask/output/Duster/Replica_6/office_2/rgb_436_mask.png",
+    "type": "binary",
+    "mask_thresh": 0.6
+  },
+  {
+    "name": "rgb_607.png",
+    "H": 384,
+    "W": 512,
+    "mask": "/project2/yichuanh/GaMO/getmask/output/Duster/Replica_6/office_2/rgb_607_mask.png",
+    "type": "binary",
+    "mask_thresh": 0.6
+  },
+  {
+    "name": "rgb_760.png",
+    "H": 384,
+    "W": 512,
+    "mask": "/project2/yichuanh/GaMO/getmask/output/Duster/Replica_6/office_2/rgb_760_mask.png",
+    "type": "binary",
+    "mask_thresh": 0.6
+  },
+  {
+    "name": "rgb_831.png",
+    "H": 384,
+    "W": 512,
+    "mask": "/project2/yichuanh/GaMO/getmask/output/Duster/Replica_6/office_2/rgb_831_mask.png",
+    "type": "binary",
+    "mask_thresh": 0.6
+  }
+]

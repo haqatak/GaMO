@@ -1,0 +1,25 @@
+name: 3dgs
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.7
+  - pip
+  - pytorch=1.12.1
+  - torchvision=0.13.1
+  - torchaudio=0.12.1
+  - cudatoolkit=11.6
+  - pip:
+    - numpy==1.21.5
+    - opencv-python==4.11.0.86
+    - matplotlib==3.5.3
+    - scipy==1.7.3
+    - plyfile==0.8.1
+    - tqdm==4.67.1
+    - lpips==0.1.4
+    - pycolmap==0.4.0
+    - huggingface-hub==0.16.4
+    - torchmetrics==0.11.4
+    - torch-fidelity==0.3.0
