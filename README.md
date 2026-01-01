@@ -3,6 +3,9 @@
 <p align="center">
   <img src="2x4.gif" width="100%" />
 </p>
+<p align="center">
+  <img src="center.png" width="100%" />
+</p>
 ---
 
 ## 📦 Installation
