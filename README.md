@@ -4,11 +4,6 @@
   <img src="transition_result.gif" width="48%" />
   <img src="transition_result.gif" width="48%" />
 </p>
-
-<p align="center">
-  <img src="teaser.png" width="100%" />
-</p>
-
 ---
 
 ## 📦 Installation
