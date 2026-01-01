@@ -35,7 +35,7 @@ Required:
 
 Additional optional downloads (depending on your environment):
 - Stable-Diffusion-2-1-base  
-  → place under: `gamo/models/stable-diffusion-2-1-base/`  
+  → place under: `gamo/check_points/`  
   (Download) → [Stable-Diffusion-2-1-base](https://huggingface.co/Manojb/stable-diffusion-2-1-base)
 
 - MASt3R model weights  
