@@ -10,7 +10,7 @@
 Official implementation of GaMO (version 1)
 
 ## Environment Setup
-Note: The project currently requires 3 separate conda environments because certain modules depend on incompatible library versions. A unified environment YAML will be released in the next update.
+⚠️ Note: The project currently requires 3 separate conda environments because certain modules depend on incompatible library versions. A unified environment YAML will be released in the next update.
 
 ---
 
