@@ -3,7 +3,7 @@
   <img src="./transition_result.gif" width="48%"/>
   <img src="./transition_result.gif" width="48%"/>
 </p>
-
+![Teaser](./teaser.png)
 ---
 
 ## 📦 Installation
