@@ -16,37 +16,29 @@ Note: The project currently requires 3 separate conda environments because certa
 
 ## Pretrained Models (Required)
 
-Before running the pipeline, manually download the following checkpoints and place them inside:
+Before running GaMO, make sure the pretrained weights exist under:
 
 gamo/check_points/
 
 Required:
-- GaMO pretrained models:
-  https://huggingface.co/ewrfcas/MVGenMaster/resolve/main/check_points/pretrained_model.zip
-  → save to: gamo/check_points/pretrained_model.zip (then unzip)
-- DUSt3R ViTLarge checkpoint:
-  https://huggingface.co/ewrfcas/MVGenMaster/resolve/main/check_points/DUSt3R_ViTLarge_BaseDecoder_512_dpt.pth
-  → save to: gamo/check_points/DUSt3R_ViTLarge_BaseDecoder_512_dpt.pth
+- GaMO pretrained model  
+  (Download) → [pretrained_model.zip](https://huggingface.co/ewrfcas/MVGenMaster/resolve/main/check_points/pretrained_model.zip)  
+  Save to: `gamo/check_points/` then unzip
+- DUSt3R ViTLarge checkpoint  
+  (Download) → [DUSt3R_ViTLarge_BaseDecoder_512_dpt.pth](https://huggingface.co/ewrfcas/MVGenMaster/resolve/main/check_points/DUSt3R_ViTLarge_BaseDecoder_512_dpt.pth)  
+  Save to: `gamo/check_points/`
 
-Example download:
+---
 
-    cd gamo/check_points/
-    wget https://huggingface.co/ewrfcas/MVGenMaster/resolve/main/check_points/pretrained_model.zip
-    unzip pretrained_model.zip
+Additional optional downloads (depending on your environment):
+- Stable-Diffusion-2-1-base  
+  → place under: `gamo/models/stable-diffusion-2-1-base/`  
+  (Download) → [Stable-Diffusion-2-1-base](https://huggingface.co/Manojb/stable-diffusion-2-1-base)
 
-    wget https://huggingface.co/ewrfcas/MVGenMaster/resolve/main/check_points/DUSt3R_ViTLarge_BaseDecoder_512_dpt.pth
+- MASt3R model weights  
+  → place under: `gamo/submodules/MASt3R-SLAM/thirdparty/mast3r/weights/`  
+  (Download) → [MASt3R GitHub](https://github.com/naver/mast3r)
 
-Additional optional downloads:
-- Stable-Diffusion-2-1-base → gamo/models/stable-diffusion-2-1-base/
-- MASt3R weights → gamo/submodules/MASt3R-SLAM/thirdparty/mast3r/weights/
-
-Example (optional):
-
-    huggingface-cli download stabilityai/stable-diffusion-2-1-base \
-      --local-dir gamo/models/stable-diffusion-2-1-base/
-
-    huggingface-cli download wqx6699/MASt3R \
-      --local-dir gamo/submodules/MASt3R-SLAM/thirdparty/mast3r/weights/
 
 ---
 
