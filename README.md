@@ -8,155 +8,152 @@
 </p>
 
 Official implementation of GaMO (version 1)
-### Environment Setup
-⚠️ Note: The project currently requires **3 separate environments** because some modules depend on conflicting library versions. We are preparing a **unified environment YAML**, which will be released in the next update. Stay tuned. 🏃
 
-
-## 📦 Installation
-
-### 1️⃣ Create Conda Environments
-```bash
-# 1. 3DGS environment
-conda env create -f env/env_3dgs.yml
-
-# 2. GaMO environment
-conda env create -f env/env_GaMO.yml
-
-# 3. Mask / Init environment
-conda env create -f env/env_mask.yml
-```
+## Environment Setup
+Note: The project currently requires 3 separate conda environments because certain modules depend on incompatible library versions. A unified environment YAML will be released in the next update.
 
 ---
 
-### 2️⃣ Install Local Editable Kernels
-```bash
-# For 3dgs & mask environments
-conda activate 3dgs   # (repeat for 'mask' env)
-pip install -e 3dgs/submodules/diff-gaussian-rasterization
-pip install -e 3dgs/submodules/simple-knn
+## Pretrained Models (Required)
 
-# For GaMO environment
-conda activate GaMO
-pip install -e gamo/submodules/MASt3R-SLAM
-pip install -e gamo/submodules/MASt3R-SLAM/thirdparty/mast3r
-pip install -e gamo/submodules/MASt3R-SLAM/thirdparty/in3d
-```
+Before running the pipeline, manually download the following checkpoints and place them inside:
+
+gamo/check_points/
+
+Required:
+- GaMO pretrained models:
+  https://huggingface.co/ewrfcas/MVGenMaster/resolve/main/check_points/pretrained_model.zip
+  → save to: gamo/check_points/pretrained_model.zip (then unzip)
+- DUSt3R ViTLarge checkpoint:
+  https://huggingface.co/ewrfcas/MVGenMaster/resolve/main/check_points/DUSt3R_ViTLarge_BaseDecoder_512_dpt.pth
+  → save to: gamo/check_points/DUSt3R_ViTLarge_BaseDecoder_512_dpt.pth
+
+Example download:
+
+    cd gamo/check_points/
+    wget https://huggingface.co/ewrfcas/MVGenMaster/resolve/main/check_points/pretrained_model.zip
+    unzip pretrained_model.zip
+
+    wget https://huggingface.co/ewrfcas/MVGenMaster/resolve/main/check_points/DUSt3R_ViTLarge_BaseDecoder_512_dpt.pth
+
+Additional optional downloads:
+- Stable-Diffusion-2-1-base → gamo/models/stable-diffusion-2-1-base/
+- MASt3R weights → gamo/submodules/MASt3R-SLAM/thirdparty/mast3r/weights/
+
+Example (optional):
+
+    huggingface-cli download stabilityai/stable-diffusion-2-1-base \
+      --local-dir gamo/models/stable-diffusion-2-1-base/
+
+    huggingface-cli download wqx6699/MASt3R \
+      --local-dir gamo/submodules/MASt3R-SLAM/thirdparty/mast3r/weights/
 
 ---
 
-## 📥 Data Preparation
+## Installation
 
-Ensure your dataset follows this exact structure:
+### 1. Create conda environments
 
-```
+    # 1. 3DGS environment
+    conda env create -f env/env_3dgs.yml
+
+    # 2. GaMO environment
+    conda env create -f env/env_GaMO.yml
+
+    # 3. Mask / Init environment
+    conda env create -f env/env_mask.yml
+
+---
+
+### 2. Install editable modules
+
+    # For 3dgs and mask
+    conda activate 3dgs
+    pip install -e 3dgs/submodules/diff-gaussian-rasterization
+    pip install -e 3dgs/submodules/simple-knn
+
+    # For GaMO
+    conda activate GaMO
+    pip install -e gamo/submodules/MASt3R-SLAM
+    pip install -e gamo/submodules/MASt3R-SLAM/thirdparty/mast3r
+    pip install -e gamo/submodules/MASt3R-SLAM/thirdparty/in3d
+
+---
+
+## Data Preparation
+
+Dataset must follow:
+
 3dgs/data/Input/Duster/{ROOT}/{SCENE}/
-├── images/            # Training images (.png)
-├── images_test/       # Testing images (.png)
+├── images/
+├── images_test/
 └── sparse/
-    ├── 0/             # Training COLMAP files (cameras.txt, images.txt, ...)
-    └── test/          # Testing COLMAP files
-```
+    ├── 0/
+    └── test/
 
 Example:
-```
-3dgs/data/Input/Duster/Replica_6/office_2/...
-```
+
+3dgs/data/Input/Duster/Replica_6/office_2/
 
 ---
 
-## 🚀 Pipeline Execution
+## Pipeline Execution
 
-### 🔰 Step 0 — Initial Pointcloud Generation (DUSt3R)
-Environment: `mask`
+### Step 0 — Initial DUSt3R pointcloud (mask env)
 
-```bash
-conda activate mask
+    conda activate mask
+    bash Point.sh Replica_6 office_2
+    mkdir -p 3dgs/data/Input/Duster/Replica_6/office_2/sparse/0
+    cp dust3r_results/Replica_6/office_2/sparse/0/points3D.ply \
+       3dgs/data/Input/Duster/Replica_6/office_2/sparse/0/
 
-# 1. Run DUSt3R initialization
-bash Point.sh Replica_6 office_2
+### Step 1 — Initial 3DGS Training (3dgs env)
 
-# 2. Copy point cloud to COLMAP directory
-mkdir -p 3dgs/data/Input/Duster/Replica_6/office_2/sparse/0
-cp dust3r_results/Replica_6/office_2/sparse/0/points3D.ply \
-   3dgs/data/Input/Duster/Replica_6/office_2/sparse/0/points3D.ply
-```
+    conda activate 3dgs
+    bash Pipeline.sh --step 1 Replica_6 office_2
 
----
+### Step 2 — Mask + GaMO Outpainting
 
-### 🧱 Step 1 — Initial 3DGS Training
-Automatically generates sparse/coarse with scaled $fx, fy × 0.6$ and re-indexed IDs.
+    # masks
+    conda activate mask
+    bash Pipeline.sh --step 1b Replica_6 office_2
 
-Environment: `3dgs`
-```bash
-conda activate 3dgs
-bash Pipeline.sh --step 1 Replica_6 office_2
-```
+    # GaMO Outpaint
+    conda activate GaMO
+    bash Pipeline.sh --step 2 Replica_6 office_2
 
----
+### Step 3 — Alignment + Seed Init
 
-### 🪄 Step 2 — Mask Generation & GaMO Outpainting
-Part A: Render masks (mask env)  
-Part B: Run GaMO diffusion outpainting (GaMO env)
+    conda activate GaMO
+    bash Pipeline.sh --step 3 Replica_6 office_2
 
-```bash
-# Part A — Masks
-conda activate mask
-bash Pipeline.sh --step 1b Replica_6 office_2
+    conda activate mask
+    bash Pipeline.sh --step 3.5 Replica_6 office_2
 
-# Part B — GaMO Outpaint
-conda activate GaMO
-bash Pipeline.sh --step 2 Replica_6 office_2
-```
+### Step 4 — Final Refinement + Rendering (3dgs)
+
+    conda activate 3dgs
+    bash Pipeline.sh --step 4 Replica_6 office_2
+    bash Pipeline.sh --step 5 Replica_6 office_2
 
 ---
 
-### ⚙️ Step 3 — Alignment & Refinement Init
-Part A: Alignment  
-Part B: Refined pointcloud
+## Summary Table
 
-```bash
-# Part A — Align + Seed PLY w/ blended GT
-conda activate GaMO
-bash Pipeline.sh --step 3 Replica_6 office_2
-
-# Part B — DUSt3R refined pointcloud
-conda activate mask
-bash Pipeline.sh --step 3.5 Replica_6 office_2
-```
-
----
-
-### 🎯 Step 4 — Final Refinement
-Environment: `3dgs`
-
-```bash
-conda activate 3dgs
-
-# Training
-bash Pipeline.sh --step 4 Replica_6 office_2
-
-# Rendering
-bash Pipeline.sh --step 5 Replica_6 office_2
-```
+Step | Environment | Command | Description
+---- | ----------- | ------- | -----------
+0 | mask | Point.sh | Initial DUSt3R pointcloud
+1 | 3dgs | --step 1 | Scale cameras, train GS
+1b | mask | --step 1b | Render masks
+2 | GaMO | --step 2 | GaMO diffusion outpainting
+3 | GaMO | --step 3 | Alignment / seed init
+3.5 | mask | --step 3.5 | DUSt3R refined pointcloud
+4 | 3dgs | --step 4 | Final GS training
+5 | 3dgs | --step 5 | Final GS rendering
 
 ---
 
-## 📊 Summary Table
+## Contact
 
-| Step | Environment | Command | Description |
-|------|-------------|---------|-------------|
-| 0 | mask | `Point.sh` | Generate initial `points3D.ply` |
-| 1 | 3dgs | `--step 1` | Scale cameras → train & render GS |
-| 1b | mask | `--step 1b` | Render masks |
-| 2 | GaMO | `--step 2` | GaMO diffusion outpainting |
-| 3 | GaMO | `--step 3` | Align, blend GT, seed PLY |
-| 3.5 | mask | `--step 3.5` | Refined pointcloud (DUSt3R) |
-| 4 | 3dgs | `--step 4` | Final GS training |
-| 5 | 3dgs | `--step 5` | Final GS rendering |
-
----
-
-## 📮 Contact
-If you experience issues, please open an Issue or reach out via GitHub.
-
-```
+If you encounter issues, open a GitHub Issue.
+"""
