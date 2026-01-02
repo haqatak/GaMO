@@ -11,6 +11,13 @@
 
 Official implementation of GaMO (version 1)
 
+## 🛠️ TODO
+- ✅ Release multi-stage code and environment setups  
+- ✅ Provide example dataset: `Replica_6/office_2`  
+- ⬜ Merge multiple conda environments and resolve dependency incompatibilities  
+- ⬜ Integrate a one-click bash script for end-to-end pipeline execution  
+- ⬜ Add more evaluation datasets  
+
 
 ## Environment Setup
 ⚠️ Note: The project currently requires 3 separate conda environments because certain modules depend on incompatible library versions. A unified environment YAML will be released in the next update.
