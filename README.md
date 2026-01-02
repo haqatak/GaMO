@@ -137,12 +137,12 @@ Example:
 
 Step | Environment | Command | Description
 ---- | ----------- | ------- | -----------
-0 | mask | Point.sh | Initial DUSt3R pointcloud
+0 | opamask | Point.sh | Initial DUSt3R pointcloud
 1 | 3dgs | --step 1 | Scale cameras, train GS
-1b | mask | --step 1b | Render masks
+1b | opamask | --step 1b | Render masks
 2 | GaMO | --step 2 | GaMO diffusion outpainting
 3 | GaMO | --step 3 | Alignment / seed init
-3.5 | mask | --step 3.5 | DUSt3R refined pointcloud
+3.5 | opamask | --step 3.5 | DUSt3R refined pointcloud
 4 | 3dgs | --step 4 | Final GS training
 5 | 3dgs | --step 5 | Final GS rendering
 
