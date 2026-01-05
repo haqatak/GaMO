@@ -159,3 +159,16 @@ Step | Environment | Command | Description
 
 If you encounter issues, open a GitHub Issue.
 """
+
+---
+## Citation
+
+If you find our work useful, please cite this paper and give us a ⭐️.
+
+```BibTex
+@article{gamo2024,
+    author    = {Huang, Yi-Chuan and Chien, Hao-Jen and Lin, Chin-Yang and Chen, Ying-Huan and Liu, Yu-Lun},
+    title     = {GaMO: Geometry-aware Multi-view Diffusion Outpainting for Sparse-View 3D Reconstruction},
+    journal   = {arXiv preprint arXiv:2406.01570},
+    year      = {2024}
+}
