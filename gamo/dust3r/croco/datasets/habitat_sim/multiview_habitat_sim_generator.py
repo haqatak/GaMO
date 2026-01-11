@@ -277,52 +277,64 @@ class MultiviewHabitatSimGenerator:
         return viewpoint_observations
 
     def __getitem__(self, useless_idx):
-        ref_position, ref_orientation, nav_point = self.sample_random_viewpoint()
-        ref_observations = self.render_viewpoint(ref_position, ref_orientation)
-        # Extract point cloud
-        ref_pointcloud = compute_pointcloud(depthmap=ref_observations['depth'], hfov=self.hfov,
-                                        camera_position=ref_position, camera_rotation=ref_orientation)
-
         pixels_count = self.resolution[0] * self.resolution[1]
-        ref_valid_fraction = len(ref_pointcloud) / pixels_count
-        assert ref_valid_fraction <= 1.0 and ref_valid_fraction >= 0.0
-        if ref_valid_fraction < self.minimum_valid_fraction:
-                # This should produce a recursion error at some point when something is very wrong.
-                return self[0]
-        # Pick an reference observed point in the point cloud
-        observed_point = np.mean(ref_pointcloud, axis=0)
 
-        # Add the first image as reference
-        viewpoints_observations = [ref_observations]
-        viewpoints_covisibility = [ref_valid_fraction]
-        viewpoints_positions = [ref_position]
-        viewpoints_orientations = [quaternion.as_float_array(ref_orientation)]
-        viewpoints_clouds = [ref_pointcloud]
-        viewpoints_valid_fractions = [ref_valid_fraction]
+        for _ in range(self.max_attempts_count):
+            ref_position, ref_orientation, nav_point = self.sample_random_viewpoint()
+            ref_observations = self.render_viewpoint(ref_position, ref_orientation)
+            # Extract point cloud
+            ref_pointcloud = compute_pointcloud(depthmap=ref_observations['depth'], hfov=self.hfov,
+                                            camera_position=ref_position, camera_rotation=ref_orientation)
 
-        for _ in range(self.views_count - 1):
-            # Generate an other viewpoint using some dummy random walk
-            successful_sampling = False
-            for sampling_attempt in range(self.max_attempts_count):
-                position, rotation, _ = self.sample_other_random_viewpoint(observed_point, nav_point)
-                # Observation
-                other_viewpoint_observations = self.render_viewpoint(position, rotation)
-                other_pointcloud = compute_pointcloud(other_viewpoint_observations['depth'], self.hfov, position, rotation)
+            ref_valid_fraction = len(ref_pointcloud) / pixels_count
+            assert ref_valid_fraction <= 1.0 and ref_valid_fraction >= 0.0
+            if ref_valid_fraction < self.minimum_valid_fraction:
+                    # This should produce a recursion error at some point when something is very wrong.
+                    continue
+            # Pick an reference observed point in the point cloud
+            observed_point = np.mean(ref_pointcloud, axis=0)
 
-                is_valid, valid_fraction, covisibility = self.is_other_pointcloud_overlapping(ref_pointcloud, other_pointcloud)
-                if is_valid:
-                        successful_sampling = True
-                        break
-            if not successful_sampling:
-                print("WARNING: Maximum number of attempts reached.")
-                # Dirty hack, try using a novel original viewpoint
-                return self[0]
-            viewpoints_observations.append(other_viewpoint_observations)
-            viewpoints_covisibility.append(covisibility)
-            viewpoints_positions.append(position)
-            viewpoints_orientations.append(quaternion.as_float_array(rotation)) # WXYZ convention for the quaternion encoding.
-            viewpoints_clouds.append(other_pointcloud)
-            viewpoints_valid_fractions.append(valid_fraction)
+            # Add the first image as reference
+            viewpoints_observations = [ref_observations]
+            viewpoints_covisibility = [ref_valid_fraction]
+            viewpoints_positions = [ref_position]
+            viewpoints_orientations = [quaternion.as_float_array(ref_orientation)]
+            viewpoints_clouds = [ref_pointcloud]
+            viewpoints_valid_fractions = [ref_valid_fraction]
+
+            failed_secondary = False
+            for _ in range(self.views_count - 1):
+                # Generate an other viewpoint using some dummy random walk
+                successful_sampling = False
+                for sampling_attempt in range(self.max_attempts_count):
+                    position, rotation, _ = self.sample_other_random_viewpoint(observed_point, nav_point)
+                    # Observation
+                    other_viewpoint_observations = self.render_viewpoint(position, rotation)
+                    other_pointcloud = compute_pointcloud(other_viewpoint_observations['depth'], self.hfov, position, rotation)
+
+                    is_valid, valid_fraction, covisibility = self.is_other_pointcloud_overlapping(ref_pointcloud, other_pointcloud)
+                    if is_valid:
+                            successful_sampling = True
+                            break
+                if not successful_sampling:
+                    print("WARNING: Maximum number of attempts reached.")
+                    # Dirty hack, try using a novel original viewpoint
+                    failed_secondary = True
+                    break
+                viewpoints_observations.append(other_viewpoint_observations)
+                viewpoints_covisibility.append(covisibility)
+                viewpoints_positions.append(position)
+                viewpoints_orientations.append(quaternion.as_float_array(rotation)) # WXYZ convention for the quaternion encoding.
+                viewpoints_clouds.append(other_pointcloud)
+                viewpoints_valid_fractions.append(valid_fraction)
+
+            if failed_secondary:
+                continue
+
+            # If we reached here, success!
+            break
+        else:
+            raise RuntimeError(f"Could not generate a valid scene after {self.max_attempts_count} attempts.")
 
         # Estimate relations between all pairs of images
         pairwise_visibility_ratios = np.ones((len(viewpoints_observations), len(viewpoints_observations)))
@@ -352,14 +364,16 @@ class MultiviewHabitatSimGenerator:
         Useful to generate nice visualisations.
         Use an even number of half turns to get a nice "C1-continuous" loop effect 
         """
-        ref_position, ref_orientation, navpoint = self.sample_random_viewpoint()
-        ref_observations = self.render_viewpoint(ref_position, ref_orientation)
-        ref_pointcloud = compute_pointcloud(depthmap=ref_observations['depth'], hfov=self.hfov,
-                                                        camera_position=ref_position, camera_rotation=ref_orientation)
         pixels_count = self.resolution[0] * self.resolution[1]
-        if len(ref_pointcloud) / pixels_count < self.minimum_valid_fraction:
-            # Dirty hack: ensure that the valid part of the image is significant
-            return self.generate_random_spiral_trajectory(images_count, max_radius, half_turns, use_constant_orientation)
+        for _ in range(self.max_attempts_count):
+            ref_position, ref_orientation, navpoint = self.sample_random_viewpoint()
+            ref_observations = self.render_viewpoint(ref_position, ref_orientation)
+            ref_pointcloud = compute_pointcloud(depthmap=ref_observations['depth'], hfov=self.hfov,
+                                                            camera_position=ref_position, camera_rotation=ref_orientation)
+            if len(ref_pointcloud) / pixels_count >= self.minimum_valid_fraction:
+                break
+        else:
+            raise RuntimeError(f"Could not generate a valid random spiral trajectory after {self.max_attempts_count} attempts.")
 
         # Pick an observed point in the point cloud
         observed_point = np.mean(ref_pointcloud, axis=0)
