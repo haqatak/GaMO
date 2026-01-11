@@ -156,6 +156,32 @@ def kl_divergence(hidden_states):
     return hidden_states.var() + hidden_states.mean() ** 2 - 1 - torch.log(hidden_states.var() + 1e-7)
 
 
+def gaussian_blur_2d(image, kernel_size, sigma=None):
+    if kernel_size % 2 == 0:
+        kernel_size += 1
+
+    if sigma is None:
+        sigma = 0.3 * ((kernel_size - 1) * 0.5 - 1) + 0.8
+
+    k = kernel_size // 2
+    x = torch.arange(-k, k + 1, dtype=image.dtype, device=image.device)
+    x = torch.exp(-x**2 / (2 * sigma**2))
+    x = x / x.sum()
+
+    # 2D kernel
+    kernel_2d = x[:, None] * x[None, :]
+    kernel_2d = kernel_2d.expand(1, 1, kernel_size, kernel_size)
+
+    # image is (B, H, W)
+    b, h, w = image.shape
+    image = image.view(b, 1, h, w)
+
+    # pad
+    padding = k
+    out = torch.nn.functional.conv2d(image, kernel_2d, padding=padding)
+    return out.view(b, h, w)
+
+
 # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion_img2img.preprocess
 def preprocess(image):
     deprecation_message = "The preprocess method is deprecated and will be removed in diffusers 1.0.0. Please use VaeImageProcessor.preprocess(...) instead"
@@ -842,6 +868,7 @@ class StableDiffusionDiffEditPipeline(
         num_maps_per_mask: Optional[int] = 10,
         mask_encode_strength: Optional[float] = 0.5,
         mask_thresholding_ratio: Optional[float] = 3.0,
+        mask_smoothing_window_size: Optional[int] = None,
         num_inference_steps: int = 50,
         guidance_scale: float = 7.5,
         generator: Optional[Union[torch.Generator, List[torch.Generator]]] = None,
@@ -888,6 +915,8 @@ class StableDiffusionDiffEditPipeline(
             mask_thresholding_ratio (`float`, *optional*, defaults to 3.0):
                 The maximum multiple of the mean absolute difference used to clamp the semantic guidance map before
                 mask binarization.
+            mask_smoothing_window_size (`int`, *optional*, defaults to `None`):
+                The window size for Gaussian smoothing of the mask guidance map. If not provided, no smoothing is applied.
             num_inference_steps (`int`, *optional*, defaults to 50):
                 The number of denoising steps. More denoising steps usually lead to a higher quality image at the
                 expense of slower inference.
@@ -1025,12 +1054,15 @@ class StableDiffusionDiffEditPipeline(
             noise_pred_source, noise_pred_target = noise_pred.chunk(2)
 
         # 8. Compute the mask from the absolute difference of predicted noise residuals
-        # TODO: Consider smoothing mask guidance map
         mask_guidance_map = (
             torch.abs(noise_pred_target - noise_pred_source)
             .reshape(batch_size, num_maps_per_mask, *noise_pred_target.shape[-3:])
             .mean([1, 2])
         )
+
+        if mask_smoothing_window_size is not None:
+            mask_guidance_map = gaussian_blur_2d(mask_guidance_map, mask_smoothing_window_size)
+
         clamp_magnitude = mask_guidance_map.mean() * mask_thresholding_ratio
         semantic_mask_image = mask_guidance_map.clamp(0, clamp_magnitude) / clamp_magnitude
         semantic_mask_image = torch.where(semantic_mask_image <= 0.5, 0, 1)
