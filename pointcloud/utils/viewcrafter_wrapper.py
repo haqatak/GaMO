@@ -103,12 +103,19 @@ class LossGuidance:
         self.H = H
         self.W = W
 
-    def set_guidance_images(self, guidance_images): 
+    def set_guidance_images(self, guidance_images, view_crafter=None):
         # guidance_images: [n_frames, 3, H, W]. rendered from 3dgs
         guidance_images = F.interpolate(guidance_images, size=(self.H, self.W), mode='bilinear', align_corners=False)
         self.guidance_images = guidance_images.clamp(0, 1) # [0, 1]
     
-        self.guidance_latents = None # TODO: get the vae latents
+        if view_crafter is not None:
+            # encode to latents
+            # guidance_images is [0, 1], model expects [-1, 1]
+            x = 2.0 * self.guidance_images - 1.0
+            posterior = view_crafter.model.encode_first_stage(x)
+            self.guidance_latents = view_crafter.model.get_first_stage_encoding(posterior).detach()
+        else:
+            self.guidance_latents = None
     
     def set_guidance_masks(self, guidance_masks): 
         # guidance_masks: [n_frames, 1, H, W]. 
@@ -557,7 +564,7 @@ class ViewCrafterWrapper:
         
         print("=> Running video diffusion...")
         if self.loss_guidance_fn is not None: 
-            self.loss_guidance_fn.set_guidance_images(guidance_images)
+            self.loss_guidance_fn.set_guidance_images(guidance_images, self.view_crafter)
             if guidance_masks is not None: 
                 self.loss_guidance_fn.set_guidance_masks(guidance_masks)
             if guidance_depths is not None: 
