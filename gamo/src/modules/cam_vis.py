@@ -143,7 +143,7 @@ def add_scene_cam(scene, pose_c2w, edge_color, image=None, focal=None, imsize=No
     scene.add_geometry(cam)
 
 
-def read_camera_parameters(filename):
+def read_camera_parameters(filename, scale_factor=1.0):
     with open(filename) as f:
         lines = f.readlines()
         lines = [line.rstrip() for line in lines]
@@ -151,5 +151,11 @@ def read_camera_parameters(filename):
     extrinsics = np.fromstring(' '.join(lines[1:5]), dtype=np.float32, sep=' ').reshape((4, 4))
     # intrinsics: line [7-10), 3x3 matrix
     intrinsics = np.fromstring(' '.join(lines[7:10]), dtype=np.float32, sep=' ').reshape((3, 3))
-    # TODO: assume the feature is 1/4 of the original image size
+
+    # Scale intrinsics if needed (e.g. if feature map size is different from original image)
+    # The previous TODO mentioned assuming feature size is 1/4 of original image size.
+    # This can now be handled by passing scale_factor=0.25
+    if scale_factor != 1.0:
+        intrinsics[:2, :] *= scale_factor
+
     return intrinsics, extrinsics
